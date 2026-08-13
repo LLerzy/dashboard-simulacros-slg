@@ -131,6 +131,12 @@
   .kpi-card .sub{ font-size:12.5px; color:var(--muted); margin-top:4px; }
   .kpi-card .sub.up{ color:var(--green); font-weight:700; }
   .kpi-card .sub.down{ color:var(--red); font-weight:700; }
+  .kpi-card--verde{ border-left:4px solid var(--green); }
+  .kpi-card--verde .value{ color:var(--green); }
+  .kpi-card--verde .label{ color:#3f8f57; }
+  .kpi-card--rojo{ border-left:4px solid var(--red); }
+  .kpi-card--rojo .value{ color:var(--red); }
+  .kpi-card--rojo .label{ color:#c0473f; }
 
   /* ---------- Section shells ---------- */
   .section{
@@ -628,20 +634,21 @@ function renderKPIs(students, modo){
     const a = aggregate(students, modo);
     cards.push(kpiCard("Puntaje Global promedio", fmt(a.global), a.count + "/" + a.totalEstudiantes + " con datos"));
     const mejorArea = a.areas.reduce((best, v, i) => (v !== null && (best.v === null || v > best.v)) ? {v, i} : best, {v:null, i:-1});
-    cards.push(kpiCard("Área más fuerte", mejorArea.i >= 0 ? AREAS[mejorArea.i] : "—", mejorArea.v !== null ? fmt(mejorArea.v) + " pts" : ""));
+    cards.push(kpiCard("Área más fuerte", mejorArea.i >= 0 ? AREAS[mejorArea.i] : "—", mejorArea.v !== null ? fmt(mejorArea.v) + " pts" : "", undefined, "verde"));
     const debilArea = a.areas.reduce((worst, v, i) => (v !== null && (worst.v === null || v < worst.v)) ? {v, i} : worst, {v:null, i:-1});
-    cards.push(kpiCard("Área a reforzar", debilArea.i >= 0 ? AREAS[debilArea.i] : "—", debilArea.v !== null ? fmt(debilArea.v) + " pts" : ""));
+    cards.push(kpiCard("Área a reforzar", debilArea.i >= 0 ? AREAS[debilArea.i] : "—", debilArea.v !== null ? fmt(debilArea.v) + " pts" : "", undefined, "rojo"));
   }
 
   kpi.innerHTML = cards.join("");
 }
 
-function kpiCard(label, value, sub, deltaForColor){
+function kpiCard(label, value, sub, deltaForColor, tono){
   let subClass = "";
   if (deltaForColor !== undefined && deltaForColor !== null){
     subClass = deltaForColor > 0 ? "up" : (deltaForColor < 0 ? "down" : "");
   }
-  return `<div class="kpi-card">
+  const tonoClass = tono ? " kpi-card--" + tono : "";
+  return `<div class="kpi-card${tonoClass}">
     <div class="label">${label}</div>
     <div class="value">${value}</div>
     <div class="sub ${subClass}">${sub}</div>
@@ -990,10 +997,13 @@ function renderAreasChart(ctx, students, modo, gold, red, vista, context){
   if (chartAreas) chartAreas.destroy();
   chartAreas = new Chart(ctx, {
     type: "bar",
-    data: { labels: AREAS, datasets },
+    data: { labels: AREAS_CORTAS, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
-      scales: { y: { beginAtZero: true, max: 100, grid: { color: "#eee" } }, x: { grid: { display:false } } },
+      scales: {
+        y: { beginAtZero: true, max: 100, grid: { color: "#eee" } },
+        x: { grid: { display:false }, ticks: { maxRotation: 0, minRotation: 0 } }
+      },
       plugins: { legend: { display: mostrarLeyenda, position: "top", labels: { boxWidth: 12, font: { size: 11 } } } }
     }
   });
