@@ -433,9 +433,9 @@ const CONFIG = {
     "1004": "Orlando",
     "1005": "Diana Escobar",
     "1101": "Evely Uribe",
-    "1102": "Daniel Ceballos",
+    "1102": "Bernardo Loaiza",
     "1103": "Eduardo Perdomo",
-    "1104": "José Bernardo Loaiza",
+    "1104": "Daniel Ceballos",
     "1105": "Eneida Ceballos",
   }
 };
@@ -667,7 +667,16 @@ const STACK_LABEL_PLUGIN = {
       if (meta.hidden) return;
       meta.data.forEach((bar, index) => {
         const value = dataset.data[index];
-        if (value === null || value === undefined || value < 8) return; // evita amontonar texto en segmentos chicos
+        if (value === null || value === undefined || value <= 0) return;
+
+        // Alto real en píxeles de ESTE segmento (no del valor en %), para
+        // decidir el tamaño de letra según el espacio disponible en vez de
+        // ocultar el texto por completo cuando el segmento es angosto.
+        const alturaPx = Math.abs((bar.y ?? 0) - (bar.base ?? bar.y ?? 0));
+        if (alturaPx < 7) return; // ya no cabe ni el texto más pequeño
+
+        const fontSize = Math.max(6.5, Math.min(10.5, alturaPx * 0.55));
+
         // getCenterPoint() da el centro real del segmento. tooltipPosition()
         // apunta a la "punta" del segmento (su borde), no a su centro, y por
         // eso el texto quedaba pegado al borde en vez de centrado.
@@ -676,11 +685,11 @@ const STACK_LABEL_PLUGIN = {
         if (chartArea){
           // Margen de seguridad para que el texto nunca quede a medio cortar
           // contra el borde superior/inferior del área del gráfico.
-          y = Math.max(chartArea.top + 8, Math.min(chartArea.bottom - 8, y));
+          y = Math.max(chartArea.top + 6, Math.min(chartArea.bottom - 6, y));
         }
         ctx.save();
         ctx.fillStyle = "#ffffff";
-        ctx.font = "600 10px Inter, sans-serif";
+        ctx.font = `600 ${fontSize.toFixed(1)}px Inter, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(Math.round(value) + "%", pos.x, y);
