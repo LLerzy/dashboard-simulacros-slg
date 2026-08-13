@@ -1223,14 +1223,23 @@ function renderGroupList(students, modo){
   const byGrupo = aggregateByGrupo(students, bloqueRank);
   const byGrupoS1 = modo === "comparativo" ? aggregateByGrupo(students, "s1") : null;
 
-  const sorted = [...byGrupo].filter(g => g.global !== null).sort((a,b) => b.global - a.global);
+  // Los grupos sin datos para el bloque seleccionado (por ejemplo, un grado
+  // que aún no tiene Segundo Simulacro cargado) ya NO se ocultan: se muestran
+  // al final de la lista con "—", para que quede claro que existen pero
+  // todavía no tienen resultados, en vez de desaparecer sin explicación.
+  const sorted = [...byGrupo].sort((a,b) => {
+    if (a.global === null && b.global === null) return 0;
+    if (a.global === null) return 1;
+    if (b.global === null) return -1;
+    return b.global - a.global;
+  });
   const medals = ["m1","m2","m3"];
 
   const html = sorted.map((g, idx) => {
-    const medalClass = idx < 3 ? medals[idx] : "";
+    const medalClass = (g.global !== null && idx < 3) ? medals[idx] : "";
     const director = CONFIG.directores[g.grupo] || "Director por asignar";
     let deltaHtml = "";
-    if (modo === "comparativo"){
+    if (modo === "comparativo" && g.global !== null){
       const prev = byGrupoS1.find(x => x.grupo === g.grupo);
       if (prev && prev.global !== null){
         const dif = g.global - prev.global;
