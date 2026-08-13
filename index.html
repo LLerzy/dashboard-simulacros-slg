@@ -661,20 +661,29 @@ const NIVEL_LABELS = ["Nivel 1 · Bajo", "Nivel 2", "Nivel 3", "Nivel 4 · Avanz
 const STACK_LABEL_PLUGIN = {
   id: "stackValueLabels",
   afterDatasetsDraw(chart){
-    const { ctx } = chart;
+    const { ctx, chartArea } = chart;
     chart.data.datasets.forEach((dataset, dsIndex) => {
       const meta = chart.getDatasetMeta(dsIndex);
       if (meta.hidden) return;
       meta.data.forEach((bar, index) => {
         const value = dataset.data[index];
         if (value === null || value === undefined || value < 8) return; // evita amontonar texto en segmentos chicos
-        const pos = bar.tooltipPosition ? bar.tooltipPosition() : bar.getCenterPoint();
+        // getCenterPoint() da el centro real del segmento. tooltipPosition()
+        // apunta a la "punta" del segmento (su borde), no a su centro, y por
+        // eso el texto quedaba pegado al borde en vez de centrado.
+        const pos = bar.getCenterPoint();
+        let y = pos.y;
+        if (chartArea){
+          // Margen de seguridad para que el texto nunca quede a medio cortar
+          // contra el borde superior/inferior del área del gráfico.
+          y = Math.max(chartArea.top + 8, Math.min(chartArea.bottom - 8, y));
+        }
         ctx.save();
         ctx.fillStyle = "#ffffff";
         ctx.font = "600 10px Inter, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(Math.round(value) + "%", pos.x, pos.y);
+        ctx.fillText(Math.round(value) + "%", pos.x, y);
         ctx.restore();
       });
     });
